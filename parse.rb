@@ -6,17 +6,24 @@ class ParseHtml
   def parse
     doc = open
     doc.css('.entry .entry-content .entry-body').each { |entry|
-      # プレイヤー名が空じゃない場合のみ処理をする
-      player = entry.css('h2 a')
-      player_name = player.text
-      next if empty_string? player_name
+      player = {}
+      key = ''
+      entry.children.each { |child|
+        next unless child.elem?
+        next if empty_string?(child.text)
 
-      player_url = player.attr('href').value
+        raw_text = child.to_s
+        if raw_text.include?('h2')
+          player[:name] = child.text.strip
+        elsif raw_text.include?('h3')
+          key = child.text.strip
+        elsif raw_text.include?('p')
+          value = child.text.strip
+          player[key.to_sym] ? player[key.to_sym] << value : player[key.to_sym] = value
+        end
+      }
 
-      titles = entry.css('h3')
-      texts = entry.css('p.comment-text')
-
-      puts "#{player_name}, #{player_url}, #{titles.map { |t| t.text.strip }.join(',')}, #{texts.map { |t| t.text.strip }.join(',')}"
+      p player
     }
   end
 
