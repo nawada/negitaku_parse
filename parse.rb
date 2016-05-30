@@ -5,26 +5,30 @@ require 'nokogiri'
 class ParseHtml
   def parse
     doc = open
+    players = []
     doc.css('.entry .entry-content .entry-body').each { |entry|
       player = {}
       key = ''
       entry.children.each { |child|
         next unless child.elem?
-        next if empty_string?(child.text)
+
+        text = child.text.strip
+        next if empty_string?(text)
 
         raw_text = child.to_s
         if raw_text.include?('h2')
-          player[:name] = child.text.strip
+          player[:'名前'] = text
         elsif raw_text.include?('h3')
-          key = child.text.strip
-        elsif raw_text.include?('p')
-          value = child.text.strip
+          key = text
+        elsif raw_text.include?('p') and !empty_string?(key)
+          value = text
           player[key.to_sym] ? player[key.to_sym] << value : player[key.to_sym] = value
         end
       }
 
-      p player
+      players << player if player.size > 0
     }
+    players
   end
 
   def open(filename = 'sample.html')
@@ -37,5 +41,12 @@ class ParseHtml
 end
 
 if __FILE__ == $0
-  ParseHtml.new.parse
+  players = ParseHtml.new.parse
+
+  players.each { |player|
+    player.each {|key, value|
+      puts "#{key}: #{value}"
+    }
+    puts ''
+  }
 end
